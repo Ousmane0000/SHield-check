@@ -9,6 +9,8 @@ on:
 
 env:
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+  # Cette ligne est la clé pour corriger ton erreur "Exit code 1"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
