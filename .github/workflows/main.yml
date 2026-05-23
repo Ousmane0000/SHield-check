@@ -15,14 +15,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Réparer Gradle manuellement
-        run: |
-          mkdir -p gradle/wrapper
-          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v7.5/gradle/wrapper/gradle-wrapper.jar
-          chmod +x gradlew
+      # Au lieu de dépendre du fichier .jar manquant, on installe Gradle directement
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
@@ -32,3 +30,4 @@ jobs:
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
