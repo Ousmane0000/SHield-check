@@ -1,4 +1,4 @@
-name: Build APK with GitHub Actions
+name: Shield Security - Build APK
 
 on:
   push:
@@ -7,55 +7,91 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     
+    permissions:
+      contents: read
+      actions: read
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        cache: gradle
-    
-    - name: Grant execute permission for gradlew
-      run: chmod +x ./gradlew
-    
-    - name: Build APK (Debug)
-      run: ./gradlew assembleDebug
-      env:
-        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-    
-    - name: Upload APK as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: debug-apk
-        path: app/build/outputs/apk/debug/*.apk
-        retention-days: 30
-    
-    - name: Build APK (Release)
-      run: ./gradlew assembleRelease
-      continue-on-error: true
-      env:
-        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-    
-    - name: Upload Release APK as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: release-apk
-        path: app/build/outputs/apk/release/*.apk
-        retention-days: 30
-      continue-on-error: true
-    
-    - name: Build Status Report
-      run: |
-        echo "✅ Build completed successfully!"
-        echo "📱 APK artifacts are available in the Actions tab"
-        echo "🔑 Supabase credentials used from GitHub Secrets"
-        echo "🛡️ Shield Security Application - Ready for deployment"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Validate Gradle wrapper
+        run: ./gradlew --version
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace --info
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+
+      - name: Verify APK output
+        run: |
+          if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "✅ APK successfully built"
+            ls -lh app/build/outputs/apk/debug/app-debug.apk
+          else
+            echo "❌ APK build failed - file not found"
+            find app/build/outputs -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
+            exit 1
+          fi
+
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: shield-security-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Build Logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-logs
+          path: |
+            app/build/outputs/
+            build/
+          retention-days: 7
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "🛡️  Shield Security - Build Report"
+          echo "=========================================="
+          echo "Repository: Ousmane0000/SHield-check"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Java Version: 17"
+          echo "Build Type: Debug APK"
+          echo "=========================================="
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Build Status: SUCCESS"
+            echo "📱 APK available in Artifacts"
+          else
+            echo "❌ Build Status: FAILED"
+            echo "Check logs above for details"
+          fi
+          echo "=========================================="
