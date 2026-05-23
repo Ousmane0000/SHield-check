@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Shield Security</string>
+    <string name="device_admin_label">Shield Security Admin</string>
+    <string name="device_admin_description">Shield Security Device Admin for security lock operations</string>
+    <string name="lock_device">Lock Device</string>
+    <string name="unlock_device">Unlock Device</string>
+    <string name="admin_enabled">Admin Rights Enabled</string>
+    <string name="admin_disabled">Admin Rights Disabled</string>
+    <string name="service_running">Shield Service Running</string>
+    <string name="enable_admin">Enable Device Admin</string>
+    <string name="status">Status</string>
+</resources>
